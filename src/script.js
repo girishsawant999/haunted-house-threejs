@@ -27,15 +27,91 @@ const gui = new GUI();
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
 
+/**
+ * Textures
+ */
+const textureLoader = new THREE.TextureLoader();
+const floorAlphaTexture = textureLoader.load("./floor/alpha.jpg");
+const floorColorTexture = textureLoader.load(
+  "./floor/textures/coast_sand_rocks_02_diff_1k.jpg"
+);
+const floorARMTexture = textureLoader.load(
+  "./floor/textures/coast_sand_rocks_02_arm_1k.png"
+);
+const floorNormalTexture = textureLoader.load(
+  "./floor/textures/coast_sand_rocks_02_nor_gl_1k.png"
+);
+const floorDisplacementTexture = textureLoader.load(
+  "./floor/textures/coast_sand_rocks_02_disp_1k.png"
+);
+
+floorColorTexture.colorSpace = THREE.SRGBColorSpace;
+
+floorColorTexture.repeat.set(8, 8);
+floorARMTexture.repeat.set(8, 8);
+floorNormalTexture.repeat.set(8, 8);
+floorDisplacementTexture.repeat.set(8, 8);
+
+floorColorTexture.wrapS = THREE.RepeatWrapping;
+floorARMTexture.wrapS = THREE.RepeatWrapping;
+floorNormalTexture.wrapS = THREE.RepeatWrapping;
+floorDisplacementTexture.wrapS = THREE.RepeatWrapping;
+
+floorColorTexture.wrapT = THREE.RepeatWrapping;
+floorARMTexture.wrapT = THREE.RepeatWrapping;
+floorNormalTexture.wrapT = THREE.RepeatWrapping;
+floorDisplacementTexture.wrapT = THREE.RepeatWrapping;
+
+const wallColorTexture = textureLoader.load(
+  "./wall/textures/rock_wall_04_diff_1k.jpg"
+);
+const wallARMTexture = textureLoader.load(
+  "./wall/textures/rock_wall_04_arm_1k.png"
+);
+const wallNormalTexture = textureLoader.load(
+  "./wall/textures/rock_wall_04_nor_gl_1k.png"
+);
+
+wallColorTexture.colorSpace = THREE.SRGBColorSpace;
+
+const roofColorTexture = textureLoader.load(
+  "./roof/textures/clay_roof_tiles_03_diff_1k.jpg"
+);
+const roofARMTexture = textureLoader.load(
+  "./roof/textures/clay_roof_tiles_03_arm_1k.png"
+);
+const roofNormalTexture = textureLoader.load(
+  "./roof/textures/clay_roof_tiles_03_nor_gl_1k.png"
+);
+
+roofColorTexture.colorSpace = THREE.SRGBColorSpace;
+
 // Scene
 const scene = new THREE.Scene();
 
 const floor = new THREE.Mesh(
-  new THREE.PlaneGeometry(20, 20),
-  new THREE.MeshStandardMaterial()
+  new THREE.PlaneGeometry(20, 20, 100, 100),
+  new THREE.MeshStandardMaterial({
+    alphaMap: floorAlphaTexture,
+    transparent: true,
+    map: floorColorTexture,
+    aoMap: floorARMTexture,
+    metalnessMap: floorARMTexture,
+    roughnessMap: floorARMTexture,
+    normalMap: floorNormalTexture,
+    displacementMap: floorDisplacementTexture,
+    displacementScale: 0.3,
+    displacementBias: -0.2,
+  })
 );
 floor.rotation.x = -Math.PI * 0.5;
 scene.add(floor);
+gui
+  .add(floor.material, "displacementBias")
+  .min(-1)
+  .max(1)
+  .step(0.001)
+  .name("FloorDisplacementBias");
 
 /**
  * House
@@ -45,7 +121,13 @@ scene.add(house);
 
 const walls = new THREE.Mesh(
   new THREE.BoxGeometry(HOUSE.width, HOUSE.height, HOUSE.depth),
-  new THREE.MeshStandardMaterial()
+  new THREE.MeshStandardMaterial({
+    map: wallColorTexture,
+    aoMap: wallARMTexture,
+    roughnessMap: wallARMTexture,
+    metalnessMap: wallARMTexture,
+    normalMap: wallNormalTexture,
+  })
 );
 walls.position.y = HOUSE.height * 0.5;
 house.add(walls);
@@ -56,7 +138,13 @@ const roof = new THREE.Mesh(
     HOUSE.ROOF.height,
     HOUSE.ROOF.segments
   ),
-  new THREE.MeshStandardMaterial()
+  new THREE.MeshStandardMaterial({
+    map: roofColorTexture,
+    aoMap: roofARMTexture,
+    roughnessMap: roofARMTexture,
+    metalnessMap: roofARMTexture,
+    normalMap: roofNormalTexture,
+  })
 );
 roof.position.y = HOUSE.height + HOUSE.ROOF.height * 0.5;
 roof.rotation.y = Math.PI * 0.25;
@@ -121,13 +209,20 @@ for (let i = 0; i < 30; i++) {
  * Lights
  */
 // Ambient light
-const ambientLight = new THREE.AmbientLight("#ffffff", 0.5);
+const ambientLight = new THREE.AmbientLight("#86cdff", 0.5);
 scene.add(ambientLight);
 
 // Directional light
-const directionalLight = new THREE.DirectionalLight("#ffffff", 1.5);
-directionalLight.position.set(3, 2, -8);
-scene.add(directionalLight);
+const directionalLight = new THREE.DirectionalLight("#86cdff", 1.5);
+gui.add(directionalLight.position, "x");
+gui.add(directionalLight.position, "y");
+gui.add(directionalLight.position, "z");
+directionalLight.lookAt(house);
+
+const directionalLightHelper = new THREE.DirectionalLightHelper(
+  directionalLight
+);
+scene.add(directionalLight, directionalLightHelper);
 
 /**
  * Sizes
